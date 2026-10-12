@@ -1,0 +1,3 @@
+{"source_id":"demo-runbook-001","path":"data/synthetic/runbooks/database-connection.md","source_kind":"synthetic","product":"SupportHub","product_version":"2.4.1","review_status":"demo_only","license_note":"Project-authored synthetic fixture"}
+{"source_id":"demo-deploy-001","path":"data/synthetic/deployment_guides/compose-guide.md","source_kind":"synthetic","product":"SupportHub","product_version":"2.4.1","review_status":"demo_only","license_note":"Project-authored synthetic fixture"}
+{"source_id":"demo-upgrade-001","path":"data/synthetic/release_notes/upgrade-2.4.1.md","source_kind":"synthetic","product":"SupportHub","product_version":"2.4.1","review_status":"demo_only","license_note":"Project-authored synthetic fixture"}

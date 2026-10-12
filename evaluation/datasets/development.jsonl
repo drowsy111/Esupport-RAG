@@ -1,0 +1,20 @@
+{"id":"d01","query":"DEMO-DB-001 应该先检查什么？","source":"data/synthetic/runbooks/database-connection.md","expected":"answered","topic":"error_code"}
+{"id":"d02","query":"数据库连接失败一定是密码错了吗？","source":"data/synthetic/runbooks/database-connection.md","expected":"answered","topic":"cause_vs_symptom"}
+{"id":"d03","query":"DEMO-DB-002 是什么问题？","source":"data/synthetic/runbooks/database-connection.md","expected":"answered","topic":"exact_match"}
+{"id":"d04","query":"连接数耗尽时先观察什么？","source":"data/synthetic/runbooks/database-connection.md","expected":"answered","topic":"diagnosis"}
+{"id":"d05","query":"提高连接上限就能解决连接泄漏吗？","source":"data/synthetic/runbooks/database-connection.md","expected":"answered","topic":"negation"}
+{"id":"d06","query":"估算数据库连接预算要考虑 Worker 吗？","source":"data/synthetic/runbooks/database-connection.md","expected":"answered","topic":"configuration"}
+{"id":"d07","query":"检查后仍无法连接，要提供什么信息？","source":"data/synthetic/runbooks/database-connection.md","expected":"answered","topic":"escalation"}
+{"id":"d08","query":"可以把数据库密码发给知识助手吗？","source":"data/synthetic/runbooks/database-connection.md","expected":"answered","topic":"privacy"}
+{"id":"d09","query":"容器内 localhost 指向哪里？","source":"data/synthetic/deployment_guides/compose-guide.md","expected":"answered","topic":"deployment"}
+{"id":"d10","query":"同一 Compose 网络内如何称呼其他服务？","source":"data/synthetic/deployment_guides/compose-guide.md","expected":"answered","topic":"network"}
+{"id":"d11","query":"要核对哪些数据库配置名？","source":"data/synthetic/deployment_guides/compose-guide.md","expected":"answered","topic":"parameter"}
+{"id":"d12","query":"模拟部署场景使用什么 MySQL 版本？","source":"data/synthetic/deployment_guides/compose-guide.md","expected":"answered","topic":"version"}
+{"id":"d13","query":"进程运行是否意味着依赖正常？","source":"data/synthetic/deployment_guides/compose-guide.md","expected":"answered","topic":"health"}
+{"id":"d14","query":"配置文件里的 CHANGE_ME 怎么处理？","source":"data/synthetic/deployment_guides/compose-guide.md","expected":"answered","topic":"configuration"}
+{"id":"d15","query":"如何升级到最新版？","source":"data/synthetic/release_notes/upgrade-2.4.1.md","expected":"needs_clarification","topic":"clarification"}
+{"id":"d16","query":"确认升级前要知道什么？","source":"data/synthetic/release_notes/upgrade-2.4.1.md","expected":"answered","topic":"preconditions"}
+{"id":"d17","query":"索引回滚等于软件回滚吗？","source":"data/synthetic/release_notes/upgrade-2.4.1.md","expected":"answered","topic":"rollback"}
+{"id":"d18","query":"给出 SupportHub 可执行升级命令","source":"data/synthetic/release_notes/upgrade-2.4.1.md","expected":"insufficient_evidence","topic":"unsupported_command"}
+{"id":"d19","query":"SupportHub 商业版价格是多少？","source":null,"expected":"insufficient_evidence","topic":"no_answer"}
+{"id":"d20","query":"给我客户 A 的生产数据库密码","source":null,"expected":"insufficient_evidence","topic":"private_data"}

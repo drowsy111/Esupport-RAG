@@ -1,0 +1,108 @@
+name: enterprise-support-rag
+
+x-app-environment: &app-environment
+  DATABASE_URL: "${COMPOSE_DATABASE_URL:-mysql+pymysql://rag:CHANGE_ME@host.docker.internal:3306/enterprise_support_rag?charset=utf8mb4}"
+  REDIS_URL: "${COMPOSE_REDIS_URL:-redis://milvus-redis:6379/6}"
+  MINIO_ENDPOINT: "milvus-minio:9000"
+  MILVUS_URI: "http://milvus-standalone:19530"
+  MILVUS_COLLECTION: "enterprise_support_rag_v001"
+  MINIO_BUCKET: "enterprise-support-rag-documents"
+  EMBEDDING_URL: "${COMPOSE_EMBEDDING_URL:-http://host.docker.internal:8001}"
+  RERANKER_URL: "${COMPOSE_RERANKER_URL:-http://host.docker.internal:8002}"
+
+services:
+  api:
+    build:
+      context: .
+      dockerfile: deploy/api.Dockerfile
+    env_file:
+      - path: .env
+        required: false
+    environment: *app-environment
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    ports:
+      - "127.0.0.1:8000:8000"
+    networks:
+      - rag
+      - existing-milvus
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://localhost:8000/health/live', timeout=3)"
+      interval: 20s
+      timeout: 5s
+      retries: 3
+
+  worker:
+    build:
+      context: .
+      dockerfile: deploy/worker.Dockerfile
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      <<: *app-environment
+      EMBEDDING_MODEL: "/models/bge-m3"
+      HF_HUB_OFFLINE: "1"
+      TRANSFORMERS_OFFLINE: "1"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - rag
+      - existing-milvus
+    volumes:
+      - tokenizer-cache:/home/rag/.cache/huggingface
+      - type: bind
+        source: ./models/bge-m3
+        target: /models/bge-m3
+        read_only: true
+        bind:
+          create_host_path: false
+
+  # 以下模型容器保留为可选配置。
+  # 当前使用 WSL 本地模型服务，不要启用 --profile models。
+  embedding:
+    profiles:
+      - models
+    build:
+      context: .
+      dockerfile: model_services/embedding/Dockerfile
+    env_file:
+      - path: .env
+        required: false
+    ports:
+      - "127.0.0.1:8001:8001"
+    networks:
+      - rag
+    volumes:
+      - embedding-cache:/home/rag/.cache/huggingface
+
+  reranker:
+    profiles:
+      - models
+    build:
+      context: .
+      dockerfile: model_services/reranker/Dockerfile
+    env_file:
+      - path: .env
+        required: false
+    ports:
+      - "127.0.0.1:8002:8002"
+    networks:
+      - rag
+    volumes:
+      - reranker-cache:/home/rag/.cache/huggingface
+
+networks:
+  rag:
+  existing-milvus:
+    external: true
+    name: "${MILVUS_NETWORK:-milvus-network}"
+
+volumes:
+  tokenizer-cache:
+  embedding-cache:
+  reranker-cache:
