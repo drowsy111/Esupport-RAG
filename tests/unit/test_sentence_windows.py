@@ -1,5 +1,6 @@
 import pytest
 
+from app.core.config import Settings
 from app.ingestion.sentence_chunking import split_sentences
 from app.retrieval.context_builder import build_context
 from app.retrieval.sentence_window import make_windows, window_cost
@@ -25,6 +26,36 @@ def test_long_sentence_partitions_without_overlap_or_data_loss():
                             CharacterTokenizer(), 32)
     assert "".join(c.text for c in chunks) == text
     assert all(c.token_count <= 32 for c in chunks)
+
+
+def test_short_sentences_group_up_to_minimum_without_exceeding_maximum():
+    text = "甲。乙。丙。丁。"
+    chunks = split_sentences(
+        ParsedDocument(blocks=[ParsedBlock(text=text)]), CharacterTokenizer(),
+        max_tokens=6, min_tokens=5,
+    )
+
+    assert [chunk.text for chunk in chunks] == ["甲。乙。丙。", "丁。"]
+    assert [chunk.token_count for chunk in chunks] == [6, 2]
+    assert "".join(chunk.text for chunk in chunks) == text
+    assert all(chunk.token_count <= 6 for chunk in chunks)
+    assert all(chunk.text == text[chunk.structure["start"]:chunk.structure["end"]]
+               for chunk in chunks)
+
+
+def test_short_sentences_do_not_merge_across_blocks_or_structural_lines():
+    parsed = ParsedDocument(blocks=[
+        ParsedBlock(text="甲。"),
+        ParsedBlock(text="乙。\n- 列表项。\n丙。"),
+    ])
+    chunks = split_sentences(parsed, CharacterTokenizer(), max_tokens=100, min_tokens=4)
+
+    assert [chunk.text.strip() for chunk in chunks] == ["甲。", "乙。", "- 列表项。", "丙。"]
+
+
+def test_sentence_minimum_must_not_exceed_maximum():
+    with pytest.raises(ValueError, match="sentence_min_tokens"):
+        Settings(_env_file=None, sentence_min_tokens=48, sentence_max_tokens=32)
 
 
 def test_code_list_and_table_are_not_split_at_sentence_punctuation():

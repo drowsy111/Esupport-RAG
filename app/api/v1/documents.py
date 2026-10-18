@@ -1,3 +1,7 @@
+"""
+文件说明: 该模块定义了FastAPI应用的文档相关路由，包括列出文档和上传文档的接口。
+"""
+
 from typing import Literal
 
 from fastapi import APIRouter, Depends, File, Form, Header, Query, UploadFile

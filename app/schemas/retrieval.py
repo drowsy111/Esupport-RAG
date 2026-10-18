@@ -4,6 +4,14 @@ from app.schemas.query_context import QueryContext
 
 
 class SearchRequest(BaseModel):
+    """
+    搜索请求模型，用于描述搜索请求的相关信息。
+
+    属性:
+    - query: 搜索查询字符串
+    - knowledge_base_id: 知识库ID
+    - context: 查询上下文
+    """
     model_config = ConfigDict(extra="forbid")
     query: str = Field(min_length=1, max_length=2000)
     knowledge_base_id: str | None = None
@@ -11,6 +19,20 @@ class SearchRequest(BaseModel):
 
 
 class EvidenceSource(BaseModel):
+    """
+    证据来源模型，用于描述搜索结果中的证据来源信息。
+
+    属性:
+    - chunk_id: 文档块ID
+    - content_hash: 内容哈希值
+    - text: 文本内容
+    - page: 页码
+    - anchor: 锚点
+    - title_path: 标题路径
+    - chunk_index: 文档块索引
+    - token_count: 令牌数量
+    - structure: 结构化信息
+    """
     chunk_id: str
     content_hash: str
     text: str

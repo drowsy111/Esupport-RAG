@@ -1,20 +1,23 @@
 # 句子窗口检索
 
-新上传文档使用 `sentence-v1` 切分。中文句末标点、英文句末句点与换行作为候选边界；常见英文缩写、版本号和 URL 内部句点保留。列表项、表格行和代码围栏优先保持完整，超长单元按 BGE Token 上限无重叠切分。这里采用确定性规则，不是通用自然语言句法分析器。
+新上传文档使用 `sentence-v1` 切分。中文句末标点、英文句末句点与换行作为候选边界；常见英文缩写、版本号和 URL 内部句点保留。同一正文块内的短句会累积到最小 Token 数，避免过短文本单独成为检索单元；不会跨块、空行、列表/表格行或代码围栏合并。列表项、表格行和代码围栏优先保持完整，超长单元按 BGE Token 上限无重叠切分。这里采用确定性规则，不是通用自然语言句法分析器。
 
 流程：小单元向量召回 → SQL 授权与正文核验 → 同章节邻文扩展 → 重叠窗口合并 → 标题和完整窗口一次精排 → Top-K → evidence → LLM。
+
+检索 trace 中的 `short_windows_ratio` 和 `short_selected_ratio` 分别表示精排候选窗口、精排后 Top-K 窗口中低于 `SENTENCE_MIN_TOKENS` 的比例。该统计使用组成块 Token 数加分隔符估算；结构原子单元和边界处短句也会计入，因此用于观察趋势，不代表检索质量指标。
 
 ## 配置
 
 | 配置 | 默认值 | 含义 |
 |---|---|---|
+| SENTENCE_MIN_TOKENS | 48 | 普通正文检索单元的软下限；结构边界或超长句可能低于此值 |
 | SENTENCE_MAX_TOKENS | 200 | 单个检索单元 Token 上限，不是目标长度 |
 | WINDOW_NEIGHBORS | 2 | 每侧最多扩展两个单元 |
 | WINDOW_MAX_TOKENS | 800 | 持久化 BGE Token 数加分隔符预留的窗口预算 |
 | CONTEXT_TOP_K | 8 | 窗口精排后最多返回数量 |
 | CONTEXT_CHAR_BUDGET | 16000 | evidence JSON 字符预算 |
 
-窗口预算不是目标 LLM 的精确 Token 数。当前 LLM 提供商可配置，未引入未经验证的统一 tokenizer；输入仍需结合实际模型上下文长度配置。旧 CHUNK_MAX_TOKENS / CHUNK_OVERLAP_TOKENS 仅保留旧切分函数及兼容配置，新导入走 SENTENCE_MAX_TOKENS。
+窗口预算不是目标 LLM 的精确 Token 数。当前 LLM 提供商可配置，未引入未经验证的统一 tokenizer；输入仍需结合实际模型上下文长度配置。`SENTENCE_MIN_TOKENS` 不会跨结构边界强行凑满，且不得大于 `SENTENCE_MAX_TOKENS`。旧 CHUNK_MAX_TOKENS / CHUNK_OVERLAP_TOKENS 仅保留旧切分函数及兼容配置，新导入走 SENTENCE_MIN_TOKENS / SENTENCE_MAX_TOKENS。
 
 ## 边界、合并和引用
 

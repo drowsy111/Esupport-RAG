@@ -1,3 +1,7 @@
+"""
+文件说明: 该模块定义了FastAPI应用的知识库相关路由，包括列出知识库的接口。
+"""
+
 from fastapi import APIRouter, Depends
 from sqlalchemy import select
 

@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     embedding_max_length: int = Field(default=1024, ge=128, le=8192)
     chunk_max_tokens: int = Field(default=600, ge=64, le=7000)
     chunk_overlap_tokens: int = Field(default=60, ge=0)
+    sentence_min_tokens: int = Field(default=48, ge=1, le=600)
     sentence_max_tokens: int = Field(default=200, ge=32, le=600)
     window_neighbors: int = Field(default=2, ge=0, le=5)
     window_max_tokens: int = Field(default=800, ge=64, le=1200)
@@ -44,11 +45,16 @@ class Settings(BaseSettings):
     llm_base_url: str = ""
     llm_api_key: SecretStr = SecretStr("")
     llm_model: str = ""
+    llm_max_tokens: int = Field(default=1800, ge=256, le=8192)
+    query_planner_enabled: bool = True
+    query_planner_timeout_seconds: float = Field(default=20, gt=0)
     llm_timeout_seconds: float = Field(default=90, gt=0)
     external_timeout_seconds: float = Field(default=60, gt=0)
 
     @model_validator(mode="after")
     def validate_lengths(self):
+        if self.sentence_min_tokens > self.sentence_max_tokens:
+            raise ValueError("sentence_min_tokens must not exceed sentence_max_tokens")
         if self.sentence_max_tokens + 128 > self.embedding_max_length:
             raise ValueError("sentence_max_tokens must leave 128 embedding tokens")
         if self.window_max_tokens < self.sentence_max_tokens:

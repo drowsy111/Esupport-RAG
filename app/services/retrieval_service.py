@@ -6,12 +6,31 @@ from app.db.models import Document, DocumentVersion
 from app.repositories.chunk_repository import authorized_candidates, authorized_neighbors
 from app.retrieval.deduplication import deduplicate
 from app.retrieval.reranking import rerank
-from app.retrieval.sentence_window import make_windows
+from app.retrieval.sentence_window import make_windows, window_cost
 from app.security.permissions import allowed_knowledge_bases, require_kb
 
 
-def retrieve(session, principal, resources, settings, request):
+def _fuse_query_rankings(rankings):
+    if len(rankings) == 1:
+        return rankings[0]
+
+    scores = {}
+    hits_by_id = {}
+    for query_index, ranking in enumerate(rankings):
+        weight = 2.0 if query_index == 0 else 1.0
+        for rank, hit in enumerate(ranking, 1):
+            identifier = hit["id"]
+            scores[identifier] = scores.get(identifier, 0.0) + weight / (60 + rank)
+            hits_by_id[identifier] = hit
+    return [
+        {**hits_by_id[identifier], "score": score}
+        for identifier, score in sorted(scores.items(), key=lambda item: -item[1])
+    ]
+
+
+def retrieve(session, principal, resources, settings, request, retrieval_queries=None):
     """
+    
     """
     started = perf_counter()
     if request.knowledge_base_id:
@@ -27,12 +46,17 @@ def retrieve(session, principal, resources, settings, request):
         DocumentVersion.publication_status == "PUBLISHED",
     )))
     session.commit()  # Release DB transaction before remote calls.
-    embedding = resources.embedding.encode([request.query], kind="queries")[0]
+    queries = list(dict.fromkeys([request.query, *(retrieval_queries or [])]))
+    embeddings = resources.embedding.encode(queries, kind="queries")
     encoded_at = perf_counter()
-    hits = resources.vectors.search(
-        embedding, principal.tenant_id, kb_ids, request.context,
-        published_version_ids=published_versions,
-    )
+    rankings = [
+        resources.vectors.search(
+            embedding, principal.tenant_id, kb_ids, request.context,
+            published_version_ids=published_versions,
+        )
+        for embedding in embeddings
+    ]
+    hits = _fuse_query_rankings(rankings)
     recalled_at = perf_counter()
     # Fresh authorization and authoritative content before sending any text to model services.
     session.expire_all()
@@ -47,9 +71,19 @@ def retrieve(session, principal, resources, settings, request):
         candidates, neighbors, settings.window_neighbors, settings.window_max_tokens,
     )
     result = rerank(request.query, windows, resources.reranker, settings.context_top_k)
+    short_windows = sum(
+        window_cost(window.sources) < settings.sentence_min_tokens for window in windows
+    )
+    short_selected = sum(
+        window_cost(window.sources) < settings.sentence_min_tokens for window in result
+    )
     return result, {
         "retrieved": len(candidates), "selected": len(result),
         "windows": len(windows),
+        "short_windows": short_windows,
+        "short_windows_ratio": round(short_windows / len(windows), 4) if windows else 0,
+        "short_selected": short_selected,
+        "short_selected_ratio": round(short_selected / len(result), 4) if result else 0,
         "embedding_ms": round((encoded_at - started) * 1000, 2),
         "retrieval_ms": round((recalled_at - encoded_at) * 1000, 2),
         "rerank_ms": round((perf_counter() - recalled_at) * 1000, 2),

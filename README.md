@@ -57,6 +57,8 @@ uv pip install --python .venv/bin/python -e ".[models]"
 - MinIO 现有凭据；新建项目独立 Bucket `enterprise-support-rag-documents`，不用 Milvus 内部 Bucket。
 - MODEL_SERVICE_KEY：API、Worker 与模型服务使用相同内部密钥。
 - LLM_BASE_URL、LLM_API_KEY、LLM_MODEL：支持 chat-completions 和 JSON mode 的模型服务。
+- QUERY_PLANNER_ENABLED：聊天检索前是否让 LLM 选择直接检索、拆分子问题或澄清；规划失败回退原问题直接检索。
+- QUERY_PLANNER_TIMEOUT_SECONDS：检索规划调用的超时上限，默认 20 秒；超时回退原问题直接检索。
 - EMBEDDING_REVISION/RERANKER_REVISION：验证前固定模型 revision；main 仅为初始占位。
 - EMBEDDING_VERSION：改变模型或编码配置时同步变更，并使用新 Collection。
 - DEMO_PASSWORD：至少 12 字符，演示脚本不输出密码。
@@ -240,6 +242,9 @@ docker compose logs --tail=60 api worker
 | EMBEDDING_UNAVAILABLE | 检查模型启动日志、监听地址、容器网络、内部密钥和推理超时 |
 | Connection refused | 对应地址没有可达监听服务，先确认模型进程仍在运行 |
 | 模型返回 401 / 503 | 检查 MODEL_SERVICE_KEY 是否一致、是否仍是占位符 |
+| LLM_OUTPUT_TRUNCATED / LLM_EMPTY_RESPONSE | 按响应错误码区分截断与空响应；使用 API 错误中的 request_id 查 API 日志，日志包含 finish_reason、完成 Token 数和输入长度统计，不记录问题或证据正文 |
+| LLM_INVALID_JSON / LLM_SCHEMA_INVALID | 检查模型是否遵循 JSON 输出格式及回答字段约束；仅标题/短语问题应改为明确的总结或解释请求 |
+| LLM_PROVIDER_RESPONSE_INVALID | 检查 LLM_BASE_URL、服务商兼容协议及服务端响应结构 |
 | Redis Authentication required | REDIS_URL / COMPOSE_REDIS_URL 使用现有 Redis 有效凭据 |
 | Worker 缺少 PyTorch 警告 | Worker 只用分词器，无需因此安装模型推理库 |
 | Celery succeeded，但业务 FAILED | 业务异常已捕获，以任务接口的 READY/FAILED 为准 |
@@ -285,6 +290,8 @@ python -m scripts.import_documents --knowledge-base-id YOUR_KB_ID
 ```
 
 所有演示资料均标记 synthetic，不代表真实软件产品规范。
+
+聊天接口启用 Query Planner 时，每次聊天在检索前会增加一次模型调用。trace 返回路由、规划耗时、子问题数量及是否回退；子问题只参与召回，最终精排与回答仍使用原始问题。仅聊天使用此规划，独立 `/search` 保持原始 query 直接检索。
 
 ## 7. 测试
 

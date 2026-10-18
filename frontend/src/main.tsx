@@ -10,7 +10,7 @@ import './styles.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode><ConfigProvider locale={zhCN} theme={{ token: {
-    colorPrimary: '#17796b', borderRadius: 10, fontFamily: 'Inter, "Microsoft YaHei", sans-serif',
-    colorText: '#20332f', colorBgLayout: '#f5f7f6',
+    colorPrimary: '#3369e8', borderRadius: 9, fontFamily: 'Inter, "Microsoft YaHei", sans-serif',
+    colorText: '#18243a', colorBgLayout: '#f4f6fa',
   } }}><AntApp><QueryClientProvider client={queryClient}><BrowserRouter><App /></BrowserRouter></QueryClientProvider></AntApp></ConfigProvider></React.StrictMode>,
 );

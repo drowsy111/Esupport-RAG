@@ -1,3 +1,7 @@
+"""
+文件说明: 该模块定义了FastAPI应用的搜索相关路由，包括搜索和结果验证的接口。
+"""
+
 from fastapi import APIRouter, Depends
 
 from app.api.dependencies import (

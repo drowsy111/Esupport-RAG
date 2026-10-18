@@ -1,3 +1,7 @@
+"""
+文件说明: 该模块定义了FastAPI应用的作业相关路由，包括获取作业详情和重试作业的接口。
+"""
+
 from fastapi import APIRouter, Depends
 
 from app.api.dependencies import current_principal, get_resources, get_session
